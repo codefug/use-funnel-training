@@ -13,7 +13,7 @@
  * type Result = ReturnTypeOf<(x: number) => string>;
  * // string
  */
-export type ReturnTypeOf<T> = never; // TODO: 구현하세요
+export type ReturnTypeOf<T> = T extends (...args: any[]) => infer R ? R : never;
 
 /**
  * 함수 타입 T의 첫 번째 인자 타입을 추출합니다.
@@ -22,7 +22,11 @@ export type ReturnTypeOf<T> = never; // TODO: 구현하세요
  * type Result = FirstArg<(name: string, age: number) => void>;
  * // string
  */
-export type FirstArg<T> = never; // TODO: 구현하세요
+export type FirstArg<T> = T extends (...args: infer A) => any
+  ? A extends [infer F, ...any[]]
+    ? F
+    : never
+  : never;
 
 /**
  * Promise<T>에서 T를 추출합니다.
@@ -32,4 +36,4 @@ export type FirstArg<T> = never; // TODO: 구현하세요
  * type A = UnwrapPromise<Promise<string>>;  // string
  * type B = UnwrapPromise<string>;           // string
  */
-export type UnwrapPromise<T> = never; // TODO: 구현하세요
+export type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;

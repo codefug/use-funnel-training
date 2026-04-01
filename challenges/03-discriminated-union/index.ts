@@ -13,7 +13,9 @@
  * type Result = StepMapToUnion<StepMap>;
  * // { step: 'AStep'; context: { foo?: string } } | { step: 'BStep'; context: { foo: string } }
  */
-export type StepMapToUnion<TStepMap extends Record<string, unknown>> = never; // TODO: 구현하세요
+export type StepMapToUnion<TStepMap extends Record<string, unknown>> = {
+  [K in keyof TStepMap]: { step: K; context: TStepMap[K]}
+}[keyof TStepMap];
 
 /**
  * StepMapToUnion을 사용해 퍼널 상태 타입을 만듭니다.

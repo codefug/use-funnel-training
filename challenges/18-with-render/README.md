@@ -69,3 +69,66 @@ return descriptor.render({ dispatch });
   return render.render({ ...funnelRenderStep, dispatch });
 }
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function FunnelRenderWithEvents({
+  currentStep,
+  context,
+  historySteps,
+  currentIndex,
+  onPush,
+  onReplace,
+  onGo,
+  steps,
+}: FunnelRenderWithEventsProps): ReactNode {
+  const currentStepDef = steps[currentStep];
+  if (!currentStepDef) return null;
+
+  const history = {
+    push: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onPush(step, newContext as Record<string, unknown>);
+    },
+    replace: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onReplace(step, newContext as Record<string, unknown>);
+    },
+    go: (delta: number) => onGo(delta),
+    back: () => onGo(-1),
+  };
+
+  const stepProps: StepProps = {
+    step: currentStep,
+    context,
+    index: currentIndex,
+    history,
+  };
+
+  // 일반 스텝
+  if (typeof currentStepDef === 'function') {
+    return currentStepDef(stepProps);
+  }
+
+  // with 스텝
+  if (currentStepDef.type === 'render') {
+    const dispatch = (eventName: string, payload?: unknown) => {
+      const handler = currentStepDef.events[eventName];
+      if (!handler) throw new Error(`이벤트 '${eventName}'가 없습니다`);
+      handler(payload, stepProps);
+    };
+    return currentStepDef.render({ ...stepProps, dispatch });
+  }
+
+  return null;
+}
+```
+
+`dispatch`는 `eventName`으로 `events` 맵에서 핸들러를 찾아 `(payload, stepProps)`로 호출한다.
+컴포넌트는 `dispatch`만 알면 되고, 실제 전환 로직은 `events`에 분리된다.
+
+</details>

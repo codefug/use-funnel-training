@@ -87,3 +87,46 @@ export function createUseFunnel(useFunnelRouter) {
   };
 }
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function createUseFunnel(
+  useRouter: (initialState: FunnelState) => FunnelRouterResult,
+) {
+  return function useFunnel(initialState: FunnelState): UseFunnelReturn {
+    const router = useRouter(initialState);
+    const currentState = router.history[router.currentIndex] ?? initialState;
+
+    const history = {
+      push: (step: string, contextOrFn?: ContextOrFn) => {
+        const newContext = computeNextContext(currentState.context, contextOrFn ?? {});
+        router.push({ step, context: newContext });
+      },
+      replace: (step: string, contextOrFn?: ContextOrFn) => {
+        const newContext = computeNextContext(currentState.context, contextOrFn ?? {});
+        router.replace({ step, context: newContext });
+      },
+      go: (delta: number) => router.go(delta),
+      back: () => router.go(-1),
+    };
+
+    return {
+      step: currentState.step,
+      context: currentState.context,
+      historySteps: router.history,
+      currentIndex: router.currentIndex,
+      history,
+    };
+  };
+}
+```
+
+Factory 함수가 `useRouter`를 받아서 `useFunnel` 훅을 반환한다.
+반환된 훅은 라우터의 `push(FunnelState)` 위에 `computeNextContext`를 씌워서
+`push(step, contextOrFn)` API를 제공한다.
+
+</details>

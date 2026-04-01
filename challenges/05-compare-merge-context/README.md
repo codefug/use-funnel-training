@@ -58,3 +58,34 @@ type TransitionFn<TCurrentCtx, TTargetCtx> = (
 // TTargetCtx  = { foo: string }
 // CompareMergeContext = { foo: string }  ← foo가 required로 바뀌었으므로 반드시 넘겨야 함
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export type CompareMergeContext<TBase, TResult> = Prettify<
+  {
+    [K in RequiredCompareKeys<TBase, TResult>]: K extends keyof TResult
+      ? TResult[K]
+      : K extends keyof TBase
+        ? TBase[K]
+        : never;
+  } & {
+    [K in OptionalCompareKeys<TBase, TResult>]?: K extends keyof TBase
+      ? TBase[K]
+      : K extends keyof TResult
+        ? TResult[K]
+        : never;
+  }
+>;
+```
+
+- Required 키들은 `TResult[K]`의 타입을 사용한다 (새로 필요한 값이므로)
+- Optional 키들은 `TBase[K]`의 타입을 사용한다 (이미 있는 값이므로)
+- `Prettify`로 교차 타입을 단일 객체 타입으로 펼친다
+
+> use-funnel의 `typeUtil.ts`에서 `CompareMergeContext`로 동일하게 구현되어 있다.
+
+</details>

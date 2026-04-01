@@ -75,3 +75,32 @@ return {
   cleanup: () => { /* URL 정리 */ },
 };
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
+  const [state, dispatch] = useReducer(historyReducer<T>, {
+    history: [initialState],
+    currentIndex: 0,
+  });
+
+  return {
+    history: state.history,
+    currentIndex: state.currentIndex,
+    currentState: state.history[state.currentIndex],
+    push: (next: T) => dispatch({ type: 'PUSH', payload: next }),
+    replace: (next: T) => dispatch({ type: 'REPLACE', payload: next }),
+    go: (delta: number) => dispatch({ type: 'GO', payload: delta }),
+    back: () => dispatch({ type: 'BACK' }),
+  };
+}
+```
+
+`historyReducer`를 `useReducer`로 감싸고, `dispatch`를 편한 메서드로 래핑하는 것이 전부다.
+`currentState`는 `history[currentIndex]`를 직접 계산한다.
+
+</details>

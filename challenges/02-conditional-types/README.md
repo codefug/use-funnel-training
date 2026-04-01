@@ -70,3 +70,31 @@ type C = ElementType<string>;    // never (배열이 아니므로)
 type TransitionResult<T extends TransitionFn<any, any, any>> =
   ReturnTypeOf<T> extends Promise<infer S> ? S : never;
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+### `ReturnTypeOf<T>`
+
+```ts
+export type ReturnTypeOf<T> = T extends (...args: any[]) => infer R ? R : never;
+```
+
+### `FirstArg<T>`
+
+```ts
+export type FirstArg<T> = T extends (first: infer F, ...rest: any[]) => any ? F : never;
+```
+
+### `UnwrapPromise<T>`
+
+```ts
+export type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+```
+
+세 가지 모두 `T extends 패턴 ? infer로_캡처 : never` 구조다.
+`UnwrapPromise`는 Promise가 아닐 때 `never`가 아닌 `T`를 반환하는 점에 주의한다.
+
+</details>

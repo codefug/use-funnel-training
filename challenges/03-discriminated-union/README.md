@@ -77,3 +77,28 @@ type AnyFunnelState = {
 // 타입 안전한 버전
 type FunnelState<TStepMap> = StepMapToUnion<TStepMap>;
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+### `StepMapToUnion<TStepMap>`
+
+```ts
+export type StepMapToUnion<TStepMap extends Record<string, unknown>> = {
+  [K in keyof TStepMap]: { step: K; context: TStepMap[K] };
+}[keyof TStepMap];
+```
+
+핵심은 `{ [K in keyof T]: ... }[keyof T]` 패턴이다.
+Mapped Type으로 각 키에 대한 객체 타입을 만든 뒤, `[keyof T]`로 인덱싱하면 모든 값 타입의 유니온이 된다.
+
+### `FunnelState<TStepMap>`
+
+```ts
+export type FunnelState<TStepMap extends Record<string, unknown>> =
+  StepMapToUnion<TStepMap>;
+```
+
+</details>

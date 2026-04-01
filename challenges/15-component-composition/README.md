@@ -82,3 +82,44 @@ const Render = Object.assign(FunnelRender, {
 
 return { step, context, history, Render };
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function createRender(
+  currentStep: string,
+  context: Record<string, unknown>,
+): RenderComponent {
+  function Render(props: RenderProps) {
+    const stepDef = props[currentStep];
+    if (!stepDef) return null;
+
+    if (typeof stepDef === 'function') {
+      return stepDef({ step: currentStep, context }) as React.ReactElement;
+    }
+    return null;
+  }
+
+  return Object.assign(Render, {
+    overlay: (renderFn: OverlayDescriptor['render']): OverlayDescriptor => ({
+      type: 'overlay',
+      render: renderFn,
+    }),
+    with: (config: Omit<WithDescriptor, 'type'>): WithDescriptor => ({
+      type: 'render',
+      ...config,
+    }),
+  });
+}
+```
+
+`Object.assign(함수, { 메서드들 })`이 핵심이다.
+JavaScript에서 함수는 객체이므로 프로퍼티를 자유롭게 추가할 수 있다.
+`overlay`와 `with`는 descriptor 객체를 반환하는 팩토리 메서드다.
+
+> use-funnel의 `useFunnel.tsx`에서 `Object.assign(FunnelRender, { overlay, with })`로 동일하게 구현한다.
+
+</details>

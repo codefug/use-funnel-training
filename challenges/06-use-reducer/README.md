@@ -78,3 +78,47 @@ const [state, dispatch] = useReducer(historyReducer, {
   currentIndex: 0,
 });
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function historyReducer<T>(
+  state: HistoryState<T>,
+  action: HistoryAction<T>,
+): HistoryState<T> {
+  switch (action.type) {
+    case 'PUSH': {
+      const newHistory = [
+        ...state.history.slice(0, state.currentIndex + 1),
+        action.payload,
+      ];
+      return { history: newHistory, currentIndex: newHistory.length - 1 };
+    }
+    case 'REPLACE': {
+      const newHistory = [...state.history];
+      newHistory[state.currentIndex] = action.payload;
+      return { history: newHistory, currentIndex: state.currentIndex };
+    }
+    case 'GO': {
+      const nextIndex = Math.max(
+        0,
+        Math.min(state.history.length - 1, state.currentIndex + action.payload),
+      );
+      return { history: state.history, currentIndex: nextIndex };
+    }
+    case 'BACK': {
+      return historyReducer(state, { type: 'GO', payload: -1 });
+    }
+  }
+}
+```
+
+- `PUSH`: `slice(0, currentIndex + 1)`로 현재 이후를 잘라낸 뒤 새 항목 추가
+- `REPLACE`: 배열을 복사한 뒤 현재 인덱스만 교체
+- `GO`: `Math.max/min`으로 경계 클램핑
+- `BACK`: `GO(-1)`을 재사용
+
+</details>

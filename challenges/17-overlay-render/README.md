@@ -72,3 +72,83 @@ if (currentStepDef?.type === 'overlay') {
   renderEntries.push([currentStep, render.render({ close: history.back })]);
 }
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function FunnelRenderWithOverlay({
+  currentStep,
+  context,
+  historySteps,
+  currentIndex,
+  onPush,
+  onReplace,
+  onGo,
+  steps,
+}: FunnelRenderWithOverlayProps): ReactNode {
+  const currentStepDef = steps[currentStep];
+  if (!currentStepDef) return null;
+
+  const history = {
+    push: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onPush(step, newContext as Record<string, unknown>);
+    },
+    replace: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onReplace(step, newContext as Record<string, unknown>);
+    },
+    go: (delta: number) => onGo(delta),
+    back: () => onGo(-1),
+  };
+
+  const disabledHistory = {
+    push: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
+    replace: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
+    go: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
+    back: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
+  };
+
+  // 일반 스텝
+  if (typeof currentStepDef === 'function') {
+    return currentStepDef({ step: currentStep, context, index: currentIndex, history });
+  }
+
+  // overlay 스텝
+  if (currentStepDef.type === 'overlay') {
+    const beforeSteps = historySteps.slice(0, currentIndex);
+    let backgroundNode: ReactNode = null;
+
+    for (const prevStep of [...beforeSteps].reverse()) {
+      const prevDef = steps[prevStep.step];
+      if (typeof prevDef === 'function') {
+        backgroundNode = prevDef({
+          step: prevStep.step,
+          context: prevStep.context,
+          index: currentIndex,
+          history: disabledHistory,
+        });
+        break;
+      }
+    }
+
+    return (
+      <Fragment>
+        {backgroundNode}
+        {currentStepDef.render({ close: () => onGo(-1) })}
+      </Fragment>
+    );
+  }
+
+  return null;
+}
+```
+
+overlay 처리의 핵심은 **히스토리 역순 탐색**이다.
+현재 인덱스 이전 스텝들을 뒤에서부터 탐색해서 함수형(비overlay) 스텝을 찾아 배경으로 렌더한다.
+배경의 history는 모두 에러를 throw해서 사용을 막는다.
+
+</details>

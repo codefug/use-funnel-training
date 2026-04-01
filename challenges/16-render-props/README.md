@@ -71,3 +71,45 @@ export function FunnelRender({ currentStep, steps, ... }) {
   // overlay, with 처리는 17, 18단계에서
 }
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function FunnelRender({
+  currentStep,
+  context,
+  historySteps,
+  currentIndex,
+  onPush,
+  onReplace,
+  onGo,
+  steps,
+}: FunnelRenderProps): ReactNode {
+  const renderFn = steps[currentStep];
+  if (!renderFn) return null;
+
+  const history = {
+    push: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onPush(step, newContext as Record<string, unknown>);
+    },
+    replace: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onReplace(step, newContext as Record<string, unknown>);
+    },
+    go: (delta: number) => onGo(delta),
+    back: () => onGo(-1),
+  };
+
+  return renderFn({ step: currentStep, context, index: currentIndex, history });
+}
+```
+
+`steps[currentStep]`으로 현재 스텝의 렌더 함수를 가져온 뒤,
+`history` 객체를 만들어서 함께 전달한다.
+`history.push`는 `computeNextContext`로 context를 계산한 뒤 `onPush`를 호출한다.
+
+</details>

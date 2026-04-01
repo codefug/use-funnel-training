@@ -62,3 +62,50 @@ type SomeKeys<TBase, TResult> = keyof TResult | keyof TBase extends infer K
 ## use-funnel 연결
 
 이 두 유틸리티가 다음 단계(05)의 `CompareMergeContext`를 만드는 재료가 된다.
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+### `RequiredCompareKeys<TBase, TResult>`
+
+```ts
+export type RequiredCompareKeys<TBase, TResult> =
+  keyof TResult | keyof TBase extends infer K
+    ? K extends keyof TResult
+      ? K extends keyof TBase
+        ? TBase[K] extends TResult[K]
+          ? never       // 양쪽에 있고 타입 호환 → optional
+          : K           // 양쪽에 있지만 타입 변경 → required
+        : undefined extends TResult[K]
+          ? never       // TResult에만 있고 optional → optional
+          : K           // TResult에만 있고 required → required
+      : never           // TBase에만 있는 키 → required 아님
+    : never;
+```
+
+### `OptionalCompareKeys<TBase, TResult>`
+
+```ts
+export type OptionalCompareKeys<TBase, TResult> =
+  keyof TBase | keyof TResult extends infer K
+    ? K extends keyof TResult
+      ? K extends keyof TBase
+        ? TBase[K] extends TResult[K]
+          ? K           // 양쪽에 있고 타입 호환 → optional
+          : never       // 양쪽에 있지만 타입 변경 → required
+        : undefined extends TResult[K]
+          ? K           // TResult에만 있고 optional → optional
+          : never       // TResult에만 있고 required → required
+      : K extends keyof TBase
+        ? K             // TBase에만 있는 키 → optional
+        : never
+    : never;
+```
+
+두 타입은 서로 대칭 구조다. `RequiredCompareKeys`에서 `K`를 반환하는 자리가 `OptionalCompareKeys`에서는 `never`가 되고, 그 반대도 마찬가지다.
+
+> use-funnel의 `typeUtil.ts`에서 동일한 구현을 확인할 수 있다.
+
+</details>

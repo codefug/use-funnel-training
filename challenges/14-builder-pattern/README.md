@@ -84,3 +84,57 @@ const steps = createFunnelSteps<FunnelContext>()
 
 const funnel = useFunnel({ steps, initial: { step: 'NameStep', context: {} } });
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function createFunnelSteps<TContext>() {
+  const stepDefs: Record<string, { guard: (data: unknown) => boolean }> = {};
+  let prevGuard: ((data: unknown) => boolean) | null = null;
+
+  const builder = {
+    extends(
+      stepName: string | string[],
+      option?: { requiredKeys: (keyof TContext)[] | keyof TContext },
+    ) {
+      const steps = Array.isArray(stepName) ? stepName : [stepName];
+      let currentGuard: (data: unknown) => boolean;
+
+      if (option) {
+        const requiredKeys = Array.isArray(option.requiredKeys)
+          ? option.requiredKeys
+          : [option.requiredKeys];
+        const capturedPrevGuard = prevGuard;
+        currentGuard = (data: unknown) => {
+          if (typeof data !== 'object' || data === null) return false;
+          if (capturedPrevGuard && !capturedPrevGuard(data)) return false;
+          return requiredKeys.every((key) => key in (data as object));
+        };
+      } else {
+        currentGuard = prevGuard ?? (() => true);
+      }
+
+      for (const name of steps) {
+        stepDefs[name] = { guard: currentGuard };
+      }
+      prevGuard = currentGuard;
+      return builder;
+    },
+    build() {
+      return stepDefs;
+    },
+  };
+
+  return builder;
+}
+```
+
+핵심은 **guard 체인**이다. 각 스텝의 guard는 이전 스텝의 guard를 클로저로 캡처해서 먼저 실행한다.
+`prevGuard`를 누적하면서 체이닝하면 자동으로 "이전 스텝 조건 + 현재 스텝 조건"이 된다.
+
+> use-funnel의 `stepBuilder.ts`에서 `SimpleFunnelStepBuilder` 클래스로 동일하게 구현되어 있다.
+
+</details>

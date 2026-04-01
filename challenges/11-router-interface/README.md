@@ -71,3 +71,56 @@ export interface FunnelRouterResult<TRouteOption> {
   cleanup(): void;
 }
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+### `useMemoryRouter`
+
+```ts
+export function useMemoryRouter(initialState: FunnelState): FunnelRouterResult {
+  const history = useHistory<FunnelState>(initialState);
+
+  return {
+    history: history.history,
+    currentIndex: history.currentIndex,
+    push: (state) => history.push(state),
+    replace: (state) => history.replace(state),
+    go: (delta) => history.go(delta),
+    cleanup: () => {},
+  };
+}
+```
+
+### `createMockRouter`
+
+```ts
+export function createMockRouter(initialState: FunnelState) {
+  const calls: Array<{ method: string; args: unknown[] }> = [];
+
+  return {
+    history: [initialState],
+    currentIndex: 0,
+    push: (state: FunnelState) => {
+      calls.push({ method: 'push', args: [state] });
+    },
+    replace: (state: FunnelState) => {
+      calls.push({ method: 'replace', args: [state] });
+    },
+    go: (delta: number) => {
+      calls.push({ method: 'go', args: [delta] });
+    },
+    cleanup: () => {
+      calls.push({ method: 'cleanup', args: [] });
+    },
+    getCalls: () => calls,
+  };
+}
+```
+
+`useMemoryRouter`는 `useHistory`를 `FunnelRouterResult` 인터페이스로 감싸는 어댑터다.
+`createMockRouter`는 실제 상태 변경 없이 호출 기록만 남기는 spy 패턴이다.
+
+</details>

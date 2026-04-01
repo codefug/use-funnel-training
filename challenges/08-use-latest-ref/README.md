@@ -68,3 +68,34 @@ const transition = (step, assignContext) => {
   // ...
 };
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function useLatestRef<T>(value: T): MutableRefObject<T> {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
+}
+```
+
+`useRef`로 ref를 생성하고, 렌더마다 `ref.current`를 최신 값으로 동기화한다.
+`useEffect`를 쓰지 않고 렌더 중에 직접 할당하는 것이 포인트다.
+
+> `useEffect`로 업데이트하면 렌더 직후 한 프레임 뒤에 반영되지만,
+> 렌더 중 직접 할당하면 렌더와 동시에 최신 값이 보장된다.
+>
+> use-funnel에서는 `useUpdatableRef`라는 이름으로 동일하게 구현한다.
+>
+> ```ts
+> export function useUpdatableRef<T>(value: T) {
+>   const ref = useRef(value);
+>   ref.current = value;
+>   return ref;
+> }
+> ```
+
+</details>

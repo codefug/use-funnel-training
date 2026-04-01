@@ -80,3 +80,46 @@ export const useFunnel = createUseFunnel<NextPageRouteOption, NextPageFunnelOpti
   }
 );
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function createUseFunnel<TRouteOption = Record<never, never>>(
+  useRouter: (initialState: FunnelState) => FunnelRouterResultWithOption<TRouteOption>,
+) {
+  return function useFunnel(initialState: FunnelState): UseFunnelReturnWithOption<TRouteOption> {
+    const router = useRouter(initialState);
+    const currentState = router.history[router.currentIndex] ?? initialState;
+
+    const history = {
+      push: (step: string, contextOrFn?: ContextOrFn, option?: TRouteOption) => {
+        const newContext = computeNextContext(currentState.context, contextOrFn ?? {});
+        router.push({ step, context: newContext }, option);
+      },
+      replace: (step: string, contextOrFn?: ContextOrFn, option?: TRouteOption) => {
+        const newContext = computeNextContext(currentState.context, contextOrFn ?? {});
+        router.replace({ step, context: newContext }, option);
+      },
+      go: (delta: number) => router.go(delta),
+      back: () => router.go(-1),
+    };
+
+    return {
+      step: currentState.step,
+      context: currentState.context,
+      historySteps: router.history,
+      currentIndex: router.currentIndex,
+      history,
+    };
+  };
+}
+```
+
+12단계와 거의 동일하고, `TRouteOption` 제네릭 하나만 추가된다.
+`push/replace`의 세 번째 인자로 `option?: TRouteOption`을 받아서 라우터에 그대로 전달한다.
+기본값 `Record<never, never>`는 옵션이 없는 라우터와 호환되도록 빈 타입을 사용한다.
+
+</details>

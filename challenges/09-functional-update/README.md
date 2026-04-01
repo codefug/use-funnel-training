@@ -60,3 +60,25 @@ const transition = (step, assignContext) => {
     : { step, context };
 };
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function computeNextContext<T extends Record<string, unknown>>(
+  currentContext: T,
+  assignOrFn: Partial<Record<string, unknown>> | ((prev: T) => Record<string, unknown>),
+): Record<string, unknown> {
+  if (typeof assignOrFn === 'function') {
+    return assignOrFn(currentContext);
+  }
+  return { ...currentContext, ...assignOrFn };
+}
+```
+
+`typeof assignOrFn === 'function'`으로 함수인지 객체인지 구분하는 것이 전부다.
+React의 `setState(fn)` 패턴과 동일한 구조다.
+
+</details>

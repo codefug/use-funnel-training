@@ -100,3 +100,46 @@ const parseStepContext = (step, context) => {
   }
 };
 ```
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function parseStepContext(
+  step: string,
+  context: unknown,
+  stepOptions: Record<string, StepOption>,
+  initialState: FunnelState,
+): FunnelState {
+  const option = stepOptions[step];
+
+  if (!option) {
+    return { step, context: context as Record<string, unknown> };
+  }
+
+  if (option.guard) {
+    return option.guard(context)
+      ? { step, context: context as Record<string, unknown> }
+      : initialState;
+  }
+
+  if (option.parse) {
+    try {
+      const parsed = option.parse(context);
+      return { step, context: parsed };
+    } catch {
+      return initialState;
+    }
+  }
+
+  return { step, context: context as Record<string, unknown> };
+}
+```
+
+- `guard`: boolean을 반환하므로 `false`면 즉시 `initialState`로 폴백
+- `parse`: 예외를 던질 수 있으므로 `try/catch`로 감싸고 실패 시 `initialState`로 폴백
+- 옵션이 없으면 검증 없이 그대로 통과
+
+</details>

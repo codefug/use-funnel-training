@@ -65,3 +65,47 @@ type UseFunnelHistoryReturn = {
 
 이 훅이 완성되면 use-funnel의 핵심 상태 전환 로직과 동일한 구조가 된다.
 다음 단계(11~15)에서는 이 훅을 라우터와 연결하고 패턴으로 추상화한다.
+
+## 정답
+
+<details>
+<summary>풀기 전에 먼저 시도해보세요!</summary>
+
+```ts
+export function useFunnelHistory(initialState: FunnelState): UseFunnelHistoryReturn {
+  const history = useHistory<FunnelState>(initialState);
+  const currentState = history.currentState;
+
+  const push = (
+    step: string,
+    contextOrFn?: Partial<Record<string, unknown>> | ((prev: Record<string, unknown>) => Record<string, unknown>),
+  ) => {
+    const newContext = computeNextContext(currentState.context, contextOrFn ?? {});
+    history.push({ step, context: newContext });
+  };
+
+  const replace = (
+    step: string,
+    contextOrFn?: Partial<Record<string, unknown>> | ((prev: Record<string, unknown>) => Record<string, unknown>),
+  ) => {
+    const newContext = computeNextContext(currentState.context, contextOrFn ?? {});
+    history.replace({ step, context: newContext });
+  };
+
+  return {
+    step: currentState.step,
+    context: currentState.context,
+    historySteps: history.history,
+    currentIndex: history.currentIndex,
+    push,
+    replace,
+    go: history.go,
+    back: history.back,
+  };
+}
+```
+
+`useHistory<FunnelState>`로 히스토리를 관리하고,
+`push/replace` 시 `computeNextContext`로 context를 계산한 뒤 `{ step, context }` 형태로 저장한다.
+
+</details>

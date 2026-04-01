@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@challenges/*": ["challenges/*"]
+    },
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["challenges/**/*", "scripts/**/*", "vitest.config.ts"],
+  "exclude": ["node_modules", "challenges/**/*.test.ts", "challenges/**/*.test.tsx"]
+}

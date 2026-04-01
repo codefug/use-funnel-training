@@ -12,7 +12,7 @@
  * type Result = Prettify<{ a: string } & { b: number }>;
  * // { a: string; b: number }
  */
-export type Prettify<T> = never; // TODO: 구현하세요
+export type Prettify<T> = Omit<T, never>;
 
 /**
  * T에서 K에 해당하는 키만 필수(required)로 바꿉니다.
@@ -21,7 +21,7 @@ export type Prettify<T> = never; // TODO: 구현하세요
  * type Result = MakeRequired<{ name?: string; age?: number }, 'name'>;
  * // { name: string; age?: number }
  */
-export type MakeRequired<T, K extends keyof T> = never; // TODO: 구현하세요
+export type MakeRequired<T, K extends keyof T> = Prettify<Partial<T> & Required<Pick<T,K>>>
 
 /**
  * T에서 K에 해당하는 키만 옵셔널로 바꿉니다.
@@ -30,4 +30,4 @@ export type MakeRequired<T, K extends keyof T> = never; // TODO: 구현하세요
  * type Result = MakeOptional<{ name: string; age: number }, 'age'>;
  * // { name: string; age?: number }
  */
-export type MakeOptional<T, K extends keyof T> = never; // TODO: 구현하세요
+export type MakeOptional<T, K extends keyof T> = Prettify<Omit<T, K> & Partial<Pick<T,K>>>;

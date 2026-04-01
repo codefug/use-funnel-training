@@ -85,7 +85,7 @@ export type ReturnTypeOf<T> = T extends (...args: any[]) => infer R ? R : never;
 ### `FirstArg<T>`
 
 ```ts
-export type FirstArg<T> = T extends (first: infer F, ...rest: any[]) => any ? F : never;
+export type FirstArg<T> = T extends (...args: infer A) => any ? A extends [infer F, ...any[]] ? F : never : never;
 ```
 
 ### `UnwrapPromise<T>`

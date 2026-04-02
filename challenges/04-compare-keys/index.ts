@@ -18,7 +18,17 @@
  * type Result = RequiredCompareKeys<Base, Target>;
  * // 'bar' | 'address'
  */
-export type RequiredCompareKeys<TBase, TResult> = never; // TODO: 구현하세요
+export type RequiredCompareKeys<TBase, TResult> = keyof TBase | keyof TResult extends infer K
+  ? K extends keyof TResult
+    ? K extends keyof TBase
+      ? TBase[K] extends TResult[K]
+        ? never
+        : K
+      : undefined extends TResult[K]
+        ? never
+        : K
+    : never
+  : never;
 
 /**
  * TBase에서 TResult로 전환할 때 생략해도 되는 키들의 유니온을 반환합니다.
@@ -34,4 +44,16 @@ export type RequiredCompareKeys<TBase, TResult> = never; // TODO: 구현하세�
  * type Result = OptionalCompareKeys<Base, Target>;
  * // 'foo'
  */
-export type OptionalCompareKeys<TBase, TResult> = never; // TODO: 구현하세요
+export type OptionalCompareKeys<TBase, TResult> = keyof TBase | keyof TResult extends infer K
+  ? K extends keyof TResult
+    ? K extends keyof TBase
+      ? TBase[K] extends TResult[K]
+        ? K  // 양쪽에 있고 타입 호환
+        : never  // 양쪽에 있지만 타입 변경
+      : undefined extends TResult[K]
+          ? K  // TResult에 있지만 optional
+          : never  // TResult에 있지만 required
+    : K extends keyof TBase
+      ? K  // TBase에만 있는 키
+      : never
+  : never;

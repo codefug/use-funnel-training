@@ -10,7 +10,7 @@ use-funnel에서 스텝 A → 스텝 B로 이동할 때,
 
 ```ts
 type CurrentStep = { foo: string; bar?: number };
-type TargetStep  = { foo: string; bar: number; address: string };
+type TargetStep = { foo: string; bar: number; address: string };
 
 // bar: optional → required로 바뀜 → required 키
 // address: 새로 생김 → required 키
@@ -25,20 +25,20 @@ type Optional = OptionalCompareKeys<CurrentStep, TargetStep>; // 'foo'
 
 ### Required 판별 기준
 
-| 경우 | Required? |
-|------|-----------|
-| TResult에만 있고 required | ✅ |
-| TResult에만 있고 optional | ❌ |
-| 양쪽에 있고 TBase[K]가 TResult[K]에 할당 불가 (타입 변경) | ✅ |
-| 양쪽에 있고 TBase[K]가 TResult[K]에 할당 가능 (타입 동일/호환) | ❌ |
+| 경우                                                           | Required? |
+| -------------------------------------------------------------- | --------- |
+| TResult에만 있고 required                                      | ✅         |
+| TResult에만 있고 optional                                      | ❌         |
+| 양쪽에 있고 TBase[K]가 TResult[K]에 할당 불가 (타입 변경)      | ✅         |
+| 양쪽에 있고 TBase[K]가 TResult[K]에 할당 가능 (타입 동일/호환) | ❌         |
 
 ### Optional 판별 기준
 
-| 경우 | Optional? |
-|------|-----------|
-| 양쪽에 있고 타입 호환 | ✅ |
-| TResult에만 있고 optional | ✅ |
-| TBase에만 있는 키 | ✅ |
+| 경우                      | Optional? |
+| ------------------------- | --------- |
+| 양쪽에 있고 타입 호환     | ✅         |
+| TResult에만 있고 optional | ✅         |
+| TBase에만 있는 키         | ✅         |
 
 ## 핵심 패턴
 
@@ -47,9 +47,15 @@ type Optional = OptionalCompareKeys<CurrentStep, TargetStep>; // 'foo'
 type SomeKeys<TBase, TResult> = keyof TResult | keyof TBase extends infer K
   ? K extends keyof TResult
     ? K extends keyof TBase
-      ? /* 양쪽에 있는 경우 */ TBase[K] extends TResult[K] ? never : K
-      : /* TResult에만 있는 경우 */ undefined extends TResult[K] ? never : K
-    : /* TBase에만 있는 경우 */ K extends keyof TBase ? K : never
+      ? /* 양쪽에 있는 경우 */ TBase[K] extends TResult[K]
+        ? never
+        : K
+      : /* TResult에만 있는 경우 */ undefined extends TResult[K]
+        ? never
+        : K
+    : /* TBase에만 있는 경우 */ K extends keyof TBase
+      ? K
+      : never
   : never;
 ```
 
@@ -71,37 +77,35 @@ type SomeKeys<TBase, TResult> = keyof TResult | keyof TBase extends infer K
 ### `RequiredCompareKeys<TBase, TResult>`
 
 ```ts
-export type RequiredCompareKeys<TBase, TResult> =
-  keyof TResult | keyof TBase extends infer K
-    ? K extends keyof TResult
-      ? K extends keyof TBase
-        ? TBase[K] extends TResult[K]
-          ? never       // 양쪽에 있고 타입 호환 → optional
-          : K           // 양쪽에 있지만 타입 변경 → required
-        : undefined extends TResult[K]
-          ? never       // TResult에만 있고 optional → optional
-          : K           // TResult에만 있고 required → required
-      : never           // TBase에만 있는 키 → required 아님
-    : never;
+export type RequiredCompareKeys<TBase, TResult> = keyof TResult | keyof TBase extends infer K
+  ? K extends keyof TResult
+    ? K extends keyof TBase
+      ? TBase[K] extends TResult[K]
+        ? never // 양쪽에 있고 타입 호환 → optional
+        : K // 양쪽에 있지만 타입 변경 → required
+      : undefined extends TResult[K]
+        ? never // TResult에만 있고 optional → optional
+        : K // TResult에만 있고 required → required
+    : never // TBase에만 있는 키 → required 아님
+  : never;
 ```
 
 ### `OptionalCompareKeys<TBase, TResult>`
 
 ```ts
-export type OptionalCompareKeys<TBase, TResult> =
-  keyof TBase | keyof TResult extends infer K
-    ? K extends keyof TResult
-      ? K extends keyof TBase
-        ? TBase[K] extends TResult[K]
-          ? K           // 양쪽에 있고 타입 호환 → optional
-          : never       // 양쪽에 있지만 타입 변경 → required
-        : undefined extends TResult[K]
-          ? K           // TResult에만 있고 optional → optional
-          : never       // TResult에만 있고 required → required
-      : K extends keyof TBase
-        ? K             // TBase에만 있는 키 → optional
-        : never
-    : never;
+export type OptionalCompareKeys<TBase, TResult> = keyof TBase | keyof TResult extends infer K
+  ? K extends keyof TResult
+    ? K extends keyof TBase
+      ? TBase[K] extends TResult[K]
+        ? K // 양쪽에 있고 타입 호환 → optional
+        : never // 양쪽에 있지만 타입 변경 → required
+      : undefined extends TResult[K]
+        ? K // TResult에만 있고 optional → optional
+        : never // TResult에만 있고 required → required
+    : K extends keyof TBase
+      ? K // TBase에만 있는 키 → optional
+      : never
+  : never;
 ```
 
 두 타입은 서로 대칭 구조다. `RequiredCompareKeys`에서 `K`를 반환하는 자리가 `OptionalCompareKeys`에서는 `never`가 되고, 그 반대도 마찬가지다.

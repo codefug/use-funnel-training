@@ -58,6 +58,17 @@ function MyComponent() {
 - `createMemoryRouter`는 `useHistory`를 내부에서 호출하므로 훅이다
 - `createMockRouter`는 순수 함수로, 각 메서드가 호출됐는지 추적하는 spy 역할
 
+## 타입 노트: FunnelState vs AnyFunnelState
+
+이 챌린지에서 정의하는 `FunnelState = { step: string; context: Record<string, unknown> }`는
+런타임에서 라우터가 주고받는 **untyped 버전**이다.
+
+03단계에서 만든 `FunnelState<TStepMap>`은 스텝별로 context 타입이 좁혀지는
+**컴파일 타임 타입 안전성을 위한 제네릭 타입**이다.
+
+16단계에서 이 둘의 관계를 명확히 하고, `AnyFunnelState`라는 이름으로 정리하며
+01~05단계의 타입 유틸리티를 실제 훅에 연결하는 방법을 배운다.
+
 ## use-funnel 연결
 
 ```ts

@@ -5,6 +5,9 @@
  * solution.test.ts의 모든 테스트를 통과해야 합니다.
  */
 
+import { exhaustiveCheck } from "@challenges/utils";
+
+
 export type HistoryState<T> = {
   history: T[];
   currentIndex: number;
@@ -28,6 +31,40 @@ export function historyReducer<T>(
   state: HistoryState<T>,
   action: HistoryAction<T>,
 ): HistoryState<T> {
-  // TODO: 구현하세요
-  return state;
+  switch (action.type){
+    case 'GO': {
+      return {
+        ...state,
+        currentIndex: Math.max(0, Math.min(state.currentIndex + action.payload, state.history.length - 1))
+      }
+    }
+    case 'BACK': {
+      return {
+        ...state,
+        currentIndex: Math.max(0, state.currentIndex - 1)
+      }
+    }
+    case 'REPLACE': {
+      return {
+        ...state,
+        history: [
+          ...state.history.slice(0, state.currentIndex),
+          action.payload,
+          ...state.history.slice(state.currentIndex + 1)
+        ]
+      }
+    }
+    case 'PUSH': {
+      return {
+        currentIndex: state.currentIndex + 1,
+        history: [
+          ...state.history.slice(0, state.currentIndex + 1),
+          action.payload
+        ]
+      }
+    }
+    default: {
+      exhaustiveCheck(action);
+    }
+  }
 }

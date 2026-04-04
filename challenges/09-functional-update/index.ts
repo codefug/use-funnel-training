@@ -18,6 +18,8 @@ export function computeNextContext<T extends Record<string, unknown>>(
   currentContext: T,
   assignOrFn: Partial<Record<string, unknown>> | ((prev: T) => Record<string, unknown>),
 ): Record<string, unknown> {
-  // TODO: 구현하세요
-  throw new Error('구현하세요');
+  if (typeof assignOrFn === 'function') {
+    return assignOrFn(currentContext);
+  }
+  return { ...currentContext, ...assignOrFn };
 }

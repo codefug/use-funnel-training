@@ -26,7 +26,18 @@ export type UseHistoryReturn<T> = {
  * @param initialState - 초기 상태값
  */
 export function useHistory<T>(initialState: T): UseHistoryReturn<T> {
-  // TODO: 구현하세요
-  // historyReducer를 useReducer로 감싸고, 편리한 API를 반환하세요.
-  throw new Error('구현하세요');
+  const [state, dispatch] = useReducer(historyReducer, {
+    history: [initialState],
+    currentIndex: 0,
+  })
+
+  return {
+    currentIndex: state.currentIndex,
+    currentState: state.history[state.currentIndex],
+    history: state.history,
+    push: (state: T) => dispatch({ type: 'PUSH', payload: state }),
+    replace: (state: T) => dispatch({ type: 'REPLACE', payload: state }),
+    go: (delta: number) => dispatch({ type: 'GO', payload: delta }),
+    back: () => dispatch({ type: 'BACK' }),
+  }
 }

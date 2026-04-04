@@ -104,12 +104,81 @@ describe('06. historyReducer', () => {
       const next = historyReducer(initial, { type: 'BACK' });
       expect(next.currentIndex).toBe(0);
     });
+
+    it('BACK 후 history 배열은 변경되지 않는다', () => {
+      const state: HistoryState<string> = {
+        history: ['A', 'B', 'C'],
+        currentIndex: 2,
+      };
+      const next = historyReducer(state, { type: 'BACK' });
+      expect(next.history).toEqual(['A', 'B', 'C']);
+    });
+  });
+
+  describe('GO', () => {
+    it('payload 0이면 인덱스가 변하지 않는다', () => {
+      const state: HistoryState<string> = {
+        history: ['A', 'B', 'C'],
+        currentIndex: 1,
+      };
+      const next = historyReducer(state, { type: 'GO', payload: 0 });
+      expect(next.currentIndex).toBe(1);
+    });
+
+    it('중간 인덱스에서 양수 delta로 앞으로 이동한다', () => {
+      const state: HistoryState<string> = {
+        history: ['A', 'B', 'C', 'D', 'E'],
+        currentIndex: 1,
+      };
+      const next = historyReducer(state, { type: 'GO', payload: 2 });
+      expect(next.currentIndex).toBe(3);
+    });
+  });
+
+  describe('REPLACE', () => {
+    it('마지막 인덱스의 상태를 교체한다', () => {
+      const state: HistoryState<string> = {
+        history: ['A', 'B', 'C'],
+        currentIndex: 2,
+      };
+      const next = historyReducer(state, { type: 'REPLACE', payload: 'Z' });
+      expect(next.history).toEqual(['A', 'B', 'Z']);
+      expect(next.currentIndex).toBe(2);
+    });
+  });
+
+  describe('연속 액션', () => {
+    it('PUSH → BACK → PUSH 시 이후 히스토리가 올바르게 잘린다', () => {
+      let state = initial;
+      state = historyReducer(state, { type: 'PUSH', payload: 'B' });
+      state = historyReducer(state, { type: 'PUSH', payload: 'C' });
+      state = historyReducer(state, { type: 'BACK' });          // C로 → currentIndex: 1
+      state = historyReducer(state, { type: 'PUSH', payload: 'D' }); // B 이후 잘라내고 D 추가
+      expect(state.history).toEqual(['A', 'B', 'D']);
+      expect(state.currentIndex).toBe(2);
+    });
+
+    it('GO로 뒤로 간 뒤 PUSH하면 이후 히스토리가 잘린다', () => {
+      const state: HistoryState<string> = {
+        history: ['A', 'B', 'C', 'D'],
+        currentIndex: 3,
+      };
+      const afterGo = historyReducer(state, { type: 'GO', payload: -2 }); // index 1
+      const afterPush = historyReducer(afterGo, { type: 'PUSH', payload: 'X' });
+      expect(afterPush.history).toEqual(['A', 'B', 'X']);
+      expect(afterPush.currentIndex).toBe(2);
+    });
   });
 
   describe('불변성', () => {
     it('reducer는 새 객체를 반환한다 (원본 변경 없음)', () => {
       const next = historyReducer(initial, { type: 'PUSH', payload: 'B' });
       expect(next).not.toBe(initial);
+      expect(next.history).not.toBe(initial.history);
+    });
+
+    it('REPLACE도 새 history 배열을 반환한다', () => {
+      const next = historyReducer(initial, { type: 'REPLACE', payload: 'X' });
       expect(next.history).not.toBe(initial.history);
     });
   });

@@ -5,6 +5,8 @@
  * solution.test.ts의 모든 테스트를 통과해야 합니다.
  */
 
+export type Test = number;
+
 /**
  * TBase에서 TResult로 전환할 때 반드시 제공해야 하는 키들의 유니온을 반환합니다.
  *

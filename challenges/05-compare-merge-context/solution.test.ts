@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import type { CompareMergeContext } from './index';
+import { type CompareMergeContext } from './index';
 
 describe('05. CompareMergeContext', () => {
   it('새로 생긴 required 필드는 required로 요구한다', () => {

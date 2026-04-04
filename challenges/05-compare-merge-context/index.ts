@@ -6,11 +6,9 @@
  *
  * solution.test.ts의 모든 테스트를 통과해야 합니다.
  */
+import { OptionalCompareKeys, RequiredCompareKeys } from '@challenges/04-compare-keys';
 
-import type { OptionalCompareKeys, RequiredCompareKeys } from '../04-compare-keys/index';
-
-// 01단계에서 만든 Prettify를 재사용하거나, 여기서 다시 정의해도 됩니다.
-type Prettify<T> = { [K in keyof T]: T[K] };
+type Prettify<T> = Omit<T, never>;
 
 /**
  * TBase에서 TResult로 전환할 때 개발자가 제공해야 하는 최소한의 객체 타입.
@@ -24,4 +22,18 @@ type Prettify<T> = { [K in keyof T]: T[K] };
  * type Result = CompareMergeContext<Base, Target>;
  * // { bar: number; address: string; foo?: string }
  */
-export type CompareMergeContext<TBase, TResult> = never; // TODO: 구현하세요
+export type CompareMergeContext<TBase, TResult> = Prettify<
+  {
+    [K in RequiredCompareKeys<TBase, TResult>]: K extends keyof TResult
+      ? TResult[K]
+      : K extends keyof TBase
+        ? TBase[K]
+        : never;
+  } & {
+    [K in OptionalCompareKeys<TBase, TResult>]?: K extends keyof TBase
+      ? TBase[K]
+      : K extends keyof TResult
+        ? TResult[K]
+        : never;
+  }
+>;

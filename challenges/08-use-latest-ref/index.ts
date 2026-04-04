@@ -6,7 +6,7 @@
  */
 
 import { useRef } from 'react';
-import type { MutableRefObject } from 'react';
+import type { RefObject } from 'react';
 
 /**
  * 항상 최신 value를 가리키는 ref를 반환합니다.
@@ -15,7 +15,8 @@ import type { MutableRefObject } from 'react';
  * @param value - 추적할 값
  * @returns 항상 최신 value를 가리키는 ref
  */
-export function useLatestRef<T>(value: T): MutableRefObject<T> {
-  // TODO: 구현하세요
-  throw new Error('구현하세요');
+export function useLatestRef<T>(value: T): RefObject<T> {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
 }

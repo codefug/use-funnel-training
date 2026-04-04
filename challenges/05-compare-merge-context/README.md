@@ -40,6 +40,107 @@ type CompareMergeContext<TBase, TResult> = Prettify<
 >;
 ```
 
+## 핵심 개념 상세 설명
+
+### 1. 왜 두 개의 Mapped Type을 `&` 교차로 합치나?
+
+```ts
+type CompareMergeContext<TBase, TResult> = Prettify<
+  { [K in RequiredCompareKeys<...>]: ... }  // required 속성들
+  &
+  { [K in OptionalCompareKeys<...>]?: ... } // optional 속성들
+>;
+```
+
+TypeScript에서 **required 속성**과 **optional 속성(`?:`)** 을 하나의 Mapped Type 안에서 동시에 표현할 수 없다.
+키마다 `required`/`optional`을 다르게 줄 방법이 없기 때문에, 두 그룹을 별도 Mapped Type으로 만든 뒤 `&`로 합치는 것이다.
+
+```ts
+// 이렇게는 불가능 (키마다 조건부로 ?를 붙일 수 없음)
+type X = { [K in Keys]: K extends RequiredKeys ? Value : Value? }  // ❌ 문법 오류
+```
+
+### 2. Required 키에 왜 `TResult[K]`를 쓰고, Optional 키에는 `TBase[K]`를 쓰나?
+
+**Required 키** = "현재 스텝에 없거나, 타입이 바뀐" 필드 → 개발자가 **새 값을 직접 넘겨야** 함
+→ 넘겨야 할 타입은 `TResult`(목표 스텝)의 타입
+
+```ts
+// bar: number | undefined → number 로 좁혀짐 → 개발자가 number를 줘야 함
+// address: 아예 없던 필드 → 개발자가 string을 줘야 함
+{ bar: number; address: string }  // TResult[K] 사용
+```
+
+**Optional 키** = "이미 현재 스텝에 있고 타입도 호환되는" 필드 → **기존 값을 그대로 유지해도** 됨
+→ 생략하면 현재 값을 그대로 쓰므로, 타입 힌트는 `TBase`(현재 스텝)의 타입을 제공
+
+```ts
+// foo: 이미 string이고 Target도 string → 안 넘겨도 현재 'hello'가 유지됨
+{ foo?: string }  // TBase[K] 사용
+```
+
+### 3. `K extends keyof TResult ? TResult[K] : ...` — 왜 이런 조건식이 필요한가?
+
+`RequiredCompareKeys<TBase, TResult>`가 반환하는 키들은 논리적으로 `keyof TResult`의 부분집합이다.
+하지만 TypeScript 컴파일러는 이를 **보장하지 못한다** (타입 추론의 한계).
+
+그래서 직접 `TResult[K]`를 쓰면 에러가 발생한다:
+
+```ts
+// ❌ 컴파일러: "K가 keyof TResult라는 보장이 없어요"
+{ [K in RequiredCompareKeys<TBase, TResult>]: TResult[K] }
+```
+
+`K extends keyof TResult`로 **내로잉(narrowing)** 을 해줘야 컴파일러가 `TResult[K]` 접근을 허용한다:
+
+```ts
+// ✅ K가 TResult의 키임을 컴파일러에게 명시적으로 알림
+{ [K in RequiredCompareKeys<TBase, TResult>]: K extends keyof TResult ? TResult[K] : never }
+```
+
+`never`는 사실상 도달 불가능한 분기 — 로직상 RequiredCompareKeys는 항상 `keyof TResult`에 속하므로.
+
+### 4. `Prettify`가 왜 필요한가?
+
+`&` 교차 타입을 그대로 두면 IDE에서 이렇게 보인다:
+
+```ts
+// Prettify 없이: 타입 힌트가 복잡하게 표시됨
+{ bar: number; address: string } & { foo?: string }
+```
+
+`Prettify`는 교차 타입을 **단일 평면 객체 타입으로 펼쳐준다**:
+
+```ts
+type Prettify<T> = { [K in keyof T]: T[K] };
+
+// Prettify 적용 후: IDE에서 깔끔하게 보임
+{ bar: number; address: string; foo?: string }
+```
+
+기능은 동일하지만, 개발자 경험(DX)을 위한 처리다.
+
+### 5. 전체 흐름 정리
+
+```
+TBase  = { foo: string; bar?: number }
+TResult = { foo: string; bar: number; address: string }
+                                              ↓
+RequiredCompareKeys<TBase, TResult> = 'bar' | 'address'
+  ├─ bar: TBase엔 bar?: number, TResult엔 bar: number → 타입 호환 안 됨 (optional→required)
+  └─ address: TBase에 없음 + TResult에서 required → 필수 제공
+
+OptionalCompareKeys<TBase, TResult> = 'foo'
+  └─ foo: 양쪽에 있고 string → string 호환 → 생략 가능
+                                              ↓
+CompareMergeContext = Prettify<
+  { bar: number; address: string }   ← Required 그룹 (TResult[K])
+  &
+  { foo?: string }                   ← Optional 그룹 (TBase[K])
+>
+= { bar: number; address: string; foo?: string }
+```
+
 ## 힌트
 
 - `Prettify`는 01단계에서 만든 것을 import해서 사용하거나 여기서 다시 정의해도 된다

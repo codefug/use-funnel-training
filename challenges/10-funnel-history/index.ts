@@ -7,8 +7,8 @@
  * solution.test.ts의 모든 테스트를 통과해야 합니다.
  */
 
+import { computeNextContext } from '@challenges/09-functional-update';
 import { useHistory } from '../07-use-history/index';
-import { computeNextContext } from '../09-functional-update/index';
 
 export type FunnelState = {
   step: string;
@@ -32,8 +32,22 @@ export type UseFunnelHistoryReturn = {
  * @param initialState - 초기 퍼널 상태 { step, context }
  */
 export function useFunnelHistory(initialState: FunnelState): UseFunnelHistoryReturn {
+  const history = useHistory<FunnelState>(initialState);
+  return {
+    context: history.currentState.context,
+    step: history.currentState.step,
+    currentIndex: history.currentIndex,
+    historySteps: history.history,
+    push: (step, contextOrFn) => {
+      history.push({step, context: computeNextContext(history.currentState.context, contextOrFn ?? {})})
+    },
+    replace: (step, contextOrFn) => {
+      history.replace({step, context: computeNextContext(history.currentState.context, contextOrFn ?? {})})
+    },
+    go: history.go,
+    back: history.back,
+  }
   // TODO: 구현하세요
   // useHistory<FunnelState>를 사용하고,
   // push/replace 시 computeNextContext로 context를 계산하세요.
-  throw new Error('구현하세요');
 }

@@ -13,12 +13,11 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "paths": {
-      "@challenges/*": ["challenges/*"]
+      "@challenges/*": ["./challenges/*"]
     },
     "types": ["node", "vitest/globals"]
   },
   "include": ["challenges/**/*", "scripts/**/*", "vitest.config.ts"],
-  "exclude": ["node_modules", "challenges/**/*.test.ts", "challenges/**/*.test.tsx"]
+  "exclude": ["node_modules"]
 }

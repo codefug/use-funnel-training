@@ -45,22 +45,21 @@ export function historyReducer<T>(
       }
     }
     case 'REPLACE': {
+      const newHistory = [...state.history];
+      newHistory[state.currentIndex] = action.payload;
       return {
         ...state,
-        history: [
-          ...state.history.slice(0, state.currentIndex),
-          action.payload,
-          ...state.history.slice(state.currentIndex + 1)
-        ]
+        history: newHistory
       }
     }
     case 'PUSH': {
+      const newHistory = [
+        ...state.history.slice(0, state.currentIndex + 1),
+        action.payload
+      ]
       return {
-        currentIndex: state.currentIndex + 1,
-        history: [
-          ...state.history.slice(0, state.currentIndex + 1),
-          action.payload
-        ]
+        currentIndex: newHistory.length - 1,
+        history: newHistory
       }
     }
     default: {

@@ -32,9 +32,16 @@ export interface FunnelRouterResult {
  * @param initialState - 초기 퍼널 상태
  */
 export function useMemoryRouter(initialState: FunnelState): FunnelRouterResult {
-  // TODO: 구현하세요
-  // useHistory를 사용해서 FunnelRouterResult를 구현하세요.
-  throw new Error('구현하세요');
+  const history = useHistory<FunnelState>(initialState);
+
+  return {
+    go: history.go,
+    push: history.push,
+    replace: history.replace,
+    cleanup: () => {},
+    history: history.history,
+    currentIndex: history.currentIndex,
+  }
 }
 
 /**
@@ -44,25 +51,22 @@ export function useMemoryRouter(initialState: FunnelState): FunnelRouterResult {
  * @param initialState - 초기 퍼널 상태
  */
 export function createMockRouter(initialState: FunnelState) {
-  // TODO: 구현하세요
-  // 각 메서드가 호출됐을 때 calls 배열에 기록하고,
-  // FunnelRouterResult를 만족하는 객체를 반환하세요.
   const calls: Array<{ method: string; args: unknown[] }> = [];
 
   return {
     history: [initialState],
     currentIndex: 0,
     push: (state: FunnelState) => {
-      // TODO
+      calls.push({ method: 'push', args: [state] });
     },
     replace: (state: FunnelState) => {
-      // TODO
+      calls.push({ method: 'replace', args: [state] });
     },
     go: (delta: number) => {
-      // TODO
+      calls.push({ method: 'go', args: [delta] });
     },
     cleanup: () => {
-      // TODO
+      calls.push({ method: 'cleanup', args: [] });
     },
     // 테스트에서 호출 여부 확인용
     getCalls: () => calls,

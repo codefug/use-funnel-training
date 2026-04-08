@@ -7,8 +7,10 @@
  * solution.test.ts의 모든 테스트를 통과해야 합니다.
  */
 
-import { computeNextContext } from '../09-functional-update/index';
+import { useLatestRef } from '@challenges/08-use-latest-ref';
 import type { FunnelState } from '../11-router-interface/index';
+import { useMemo } from 'react';
+import { computeNextContext } from '@challenges/09-functional-update';
 
 type ContextOrFn =
   | Partial<Record<string, unknown>>
@@ -51,7 +53,37 @@ export type UseFunnelWithOptionReturn<TRouteOption> = {
 export function createUseFunnel<TRouteOption = Record<never, never>>(
   useRouter: (initialState: FunnelState) => FunnelRouterResultWithOption<TRouteOption>,
 ): (initialState: FunnelState) => UseFunnelWithOptionReturn<TRouteOption> {
-  // TODO: 구현하세요
-  // 12단계와 동일하지만, push/replace에 option 파라미터를 추가하세요.
-  throw new Error('구현하세요');
+  return function useFunnel(initialState: FunnelState): UseFunnelWithOptionReturn<TRouteOption> {
+    // 12단계와 동일하지만, push/replace에 option 파라미터를 추가하세요.
+    const router = useRouter(initialState);
+    const routerRef = useLatestRef(router);
+    const currentState = router.history[router.currentIndex] ?? initialState;
+
+    const history: UseFunnelWithOptionReturn<TRouteOption>['history'] = useMemo(() => {
+      return {
+        back: () => routerRef.current.go(-1),
+        go: routerRef.current.go,
+        push: (step, contextOrFn, option) => {
+          const current = routerRef.current;
+          const latestState = current.history[current.currentIndex] ?? initialState;
+          const newContext = computeNextContext(latestState.context, contextOrFn ?? {});
+          current.push({ step, context: newContext }, option);
+        },
+        replace: (step, contextOrFn, option) => {
+          const current = routerRef.current;
+          const latestState = current.history[current.currentIndex] ?? initialState;
+          const newContext = computeNextContext(latestState.context, contextOrFn ?? {});
+          current.replace({ step, context: newContext }, option);
+        },
+      };
+    }, [initialState, routerRef]);
+
+    return {
+      context: currentState.context,
+      historySteps: router.history,
+      currentIndex: router.currentIndex,
+      history,
+      step: currentState.step,
+    };
+  };
 }

@@ -52,25 +52,53 @@ type UseFunnelReturn = {
 
 ## useLatestRef가 필요한 이유
 
-`history.push` 같은 콜백은 렌더 클로저 안에서 `router`를 캡처한다.
-그런데 React에서 state가 바뀌면 새로운 `router` 객체가 생성되므로,
-캡처된 콜백은 이전 렌더의 `router`를 참조하게 된다 (stale closure).
+`history` 객체를 메모이제이션하지 않는다면, 렌더마다 새로운 함수가 생성되어 항상 그 렌더의 최신 `router`와 `currentState`를 캡처한다. 이 경우 stale closure 문제는 발생하지 않으므로 `useLatestRef`가 없어도 된다.
 
-`useLatestRef(router)`를 사용하면 ref가 항상 최신 `router`를 가리키므로,
-오래된 콜백에서도 `.current`를 통해 최신 상태를 읽을 수 있다.
+`useLatestRef`가 필요해지는 건 `history` 객체를 `useMemo`로 **안정화(memoize)** 하려 할 때다.
+
+**왜 안정화가 필요한가?**
+
+`history`를 매 렌더마다 새로 만들면, 이를 props로 받는 자식 컴포넌트들이 불필요하게 리렌더된다. 이를 막으려면 `useMemo`로 동일한 객체 참조를 유지해야 한다.
+
+**안정화하면 왜 stale closure가 생기는가?**
+
+`useMemo`의 deps에 `currentState`를 넣으면 state가 바뀔 때마다 history가 새 객체가 되어 안정화의 의미가 없어진다. 그래서 `currentState`를 deps에서 빼야 하는데, 그러면 콜백 안의 `currentState`가 처음 캡처된 값으로 고정된다 (stale closure).
 
 ```ts
-const router = useRouter(initialState);
-const routerRef = useLatestRef(router); // routerRef.current는 항상 최신 router
-
-const history = {
+// ❌ currentState가 deps에 없으면 stale
+const history = useMemo(() => ({
   push: (step, contextOrFn) => {
-    const current = routerRef.current; // 최신 router
-    const newContext = computeNextContext(current.history[current.currentIndex].context, contextOrFn ?? {});
+    const newContext = computeNextContext(currentState.context, contextOrFn ?? {}); // stale!
+    router.push({ step, context: newContext });
+  },
+}), [router.push, router.replace, router.go]);
+//  ↑ currentState를 deps에 넣으면 매 렌더마다 history가 새 객체가 되므로 제외
+```
+
+이 문제를 해결하기 위해 `currentState` 대신 ref를 통해 최신값을 읽는다.
+
+> `useLatestRef`는 렌더마다 `ref.current = value`로 갱신되는 단순한 훅이다.
+> `useRef`는 렌더 사이에도 동일한 객체를 유지하므로, 콜백이 오래된 변수 대신
+> `ref.current`를 읽으면 항상 최신 값을 얻는다.
+
+```ts
+// ✅ useMemo로 안정화하면서 최신값은 ref로 읽기
+const history = useMemo(() => ({
+  push: (step, contextOrFn) => {
+    const current = routerRef.current; // ref를 통해 최신 router 읽기
+    const latestState = current.history[current.currentIndex];
+    const newContext = computeNextContext(latestState.context, contextOrFn ?? {});
     current.push({ step, context: newContext });
   },
-};
+}), [routerRef]); // routerRef는 항상 동일한 객체이므로 deps가 안정적
 ```
+
+**정리:**
+
+| 상황                              | stale closure | useLatestRef 필요 여부 |
+| --------------------------------- | ------------- | ---------------------- |
+| `history`를 매 렌더마다 새로 생성 | 없음          | 불필요                 |
+| `history`를 `useMemo`로 안정화    | 발생          | 필요                   |
 
 ## 힌트
 

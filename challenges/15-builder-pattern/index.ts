@@ -18,7 +18,8 @@ export type StepOption = {
 };
 
 type BuilderExtendOption<TContext> = {
-  requiredKeys?: (keyof TContext)[];
+  requiredKeys?: keyof TContext | (keyof TContext)[];
+  guard?: (context: unknown) => boolean;
   parse?: (context: unknown) => Record<string, unknown>;
 };
 
@@ -42,14 +43,45 @@ type Builder<TContext> = {
  * steps.AgeStep.guard?.({});               // false
  */
 export function createFunnelSteps<TContext extends Record<string, unknown>>(): Builder<TContext> {
-  // TODO: 구현하세요
-  //
-  // prevGuard를 클로저로 유지하면서 각 스텝의 guard를 누적합니다.
-  //
-  // - option 없음: 베이스 null 체크만 하는 guard (or 이전 guard 그대로 상속)
-  // - option.requiredKeys 있음: 이전 guard 체인 + 해당 키 존재 확인
-  // - option.parse 있음: parse를 StepOption에 직접 저장 (guard는 누적하지 않음)
-  //
-  // 모든 guard는 null/undefined를 reject하는 베이스 체크를 포함해야 합니다.
-  throw new Error('구현하세요');
+  const result: Record<string, StepOption> = {};
+  let prevGuard: ((data: unknown) => boolean) | null = null;
+
+  const baseGuard = (data: unknown) => typeof data === 'object' && data !== null;
+
+  const builder: Builder<TContext> = {
+    extends(stepName, option?) {
+      const steps = Array.isArray(stepName) ? stepName : [stepName];
+      const capturedPrev = prevGuard;
+
+      const requiredKeys = option?.requiredKeys
+        ? Array.isArray(option.requiredKeys)
+          ? option.requiredKeys
+          : [option.requiredKeys]
+        : [];
+
+      const currentGuard = (data: unknown) => {
+        if (!baseGuard(data)) return false;
+        if (capturedPrev && !capturedPrev(data)) return false;
+        if (requiredKeys.length > 0 && !requiredKeys.every((key) => key in (data as object)))
+          return false;
+        if (option?.guard && !option.guard(data)) return false;
+        return true;
+      };
+
+      for (const name of steps) {
+        result[name] = {
+          guard: currentGuard,
+          ...(option?.parse ? { parse: option.parse } : {}),
+        };
+      }
+      prevGuard = currentGuard;
+
+      return builder;
+    },
+    build() {
+      return result;
+    },
+  };
+
+  return builder;
 }

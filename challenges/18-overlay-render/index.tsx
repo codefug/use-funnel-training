@@ -27,9 +27,17 @@ export type StepProps = {
   };
 };
 
+/**
+ * overlay render 함수가 받는 props.
+ * StepProps(step/context/index/history) + close 함수.
+ * 실제 @use-funnel과 동일하게 overlay 안에서도 context/history에 접근할 수 있다.
+ */
+export type OverlayRenderProps = StepProps & { close: () => void };
+
 export type OverlayDescriptor = {
   type: 'overlay';
-  render: (props: { close: () => void }) => ReactNode;
+  events?: Record<string, (payload: unknown, stepProps: StepProps) => void>;
+  render: (props: OverlayRenderProps) => ReactNode;
 };
 
 export type StepRenderFn = (props: StepProps) => ReactNode;

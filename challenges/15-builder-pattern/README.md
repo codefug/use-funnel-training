@@ -12,10 +12,10 @@ Builder 패턴으로 체이닝하면서 옵션을 누적하면 편리하다.
 
 ```ts
 const steps = createFunnelSteps<{ name?: string; age?: number; address?: string }>()
-  .extends('NameStep')                                    // 베이스 null 체크만
-  .extends('AgeStep',     { requiredKeys: ['name'] })    // name이 있어야 진입
-  .extends('AddressStep', { requiredKeys: ['age'] })     // age도 있어야 진입
-  .extends('PayStep',     { parse: PaySchema.parse })    // Zod 파싱으로 검증
+  .extends('NameStep')                                 // 베이스 null 체크만
+  .extends('AgeStep',     { requiredKeys: 'name' })   // name이 있어야 진입 (문자열 하나도 가능)
+  .extends('AddressStep', { requiredKeys: ['age'] })  // age도 있어야 진입
+  .extends('PayStep',     { parse: PaySchema.parse }) // Zod 파싱으로 검증
   .build();
 
 // build() 결과: Record<string, StepOption>
@@ -43,14 +43,29 @@ build(): Record<string, StepOption>
 
 ```ts
 .extends(stepName: string | string[], option?: {
-  requiredKeys?: (keyof TContext)[];
+  requiredKeys?: keyof TContext | (keyof TContext)[];  // 문자열 하나 or 배열 모두 허용
   parse?: (context: unknown) => Record<string, unknown>;
+  guard?: (context: unknown) => boolean;              // guard를 직접 주입할 수도 있음
 })
 ```
 
 - `requiredKeys` → 해당 키들이 모두 있는지 확인하는 `guard` 생성
-- `parse` → 직접 `parse` 함수를 등록 (guard 대신 사용)
-- 둘 다 없음 → 베이스 null/undefined 체크 guard
+- `parse` → `parse` 함수를 등록. guard와 함께 사용 가능
+- `guard` → 커스텀 guard 함수를 직접 주입
+- 셋 다 없음 → 베이스 null/undefined 체크 guard
+
+### guard와 parse 동시 사용
+
+실제 `@use-funnel` 라이브러리와 동일하게, **guard와 parse를 같은 스텝에 함께 등록할 수 있다.**
+
+둘 다 있을 때 실행 순서: `guard` 먼저 → 통과하면 `parse` 실행.
+
+```ts
+.extends('PayStep', {
+  requiredKeys: ['name'],
+  parse: (ctx) => PaySchema.parse(ctx), // guard + parse 동시 등록
+})
+```
 
 ### guard 체인
 
@@ -77,7 +92,7 @@ steps.NameStep.guard?.({});        // true (NameStep은 requiredKeys 없음)
 
 ```ts
 export function createFunnelSteps<TContext>() {
-  const stepDefs: Record<string, StepOption> = {};
+  const result: Record<string, StepOption> = {};
   let prevGuard: ((data: unknown) => boolean) | null = null;
 
   const baseGuard = (data: unknown) =>
@@ -86,32 +101,34 @@ export function createFunnelSteps<TContext>() {
   const builder = {
     extends(stepName, option?) {
       const steps = Array.isArray(stepName) ? stepName : [stepName];
+      const capturedPrev = prevGuard;
 
-      if (option?.parse) {
-        // parse 옵션: parse를 그대로 저장 (guard 체인에 영향 없음)
-        for (const name of steps) {
-          stepDefs[name] = { parse: option.parse };
-        }
-      } else {
-        // guard 옵션 또는 없음
-        const capturedPrev = prevGuard;
-        const currentGuard = option?.requiredKeys?.length
-          ? (data: unknown) => {
-              if (!baseGuard(data)) return false;
-              if (capturedPrev && !capturedPrev(data)) return false;
-              return option.requiredKeys!.every((key) => key in (data as object));
-            }
-          : capturedPrev ?? baseGuard;
+      // requiredKeys를 항상 배열로 정규화
+      const requiredKeys = option?.requiredKeys
+        ? Array.isArray(option.requiredKeys) ? option.requiredKeys : [option.requiredKeys]
+        : [];
 
-        for (const name of steps) {
-          stepDefs[name] = { guard: currentGuard };
-        }
-        prevGuard = currentGuard;
+      // guard는 항상 생성: baseGuard → capturedPrev → requiredKeys → 직접 주입 guard 순으로 체크
+      const currentGuard = (data: unknown) => {
+        if (!baseGuard(data)) return false;
+        if (capturedPrev && !capturedPrev(data)) return false;
+        if (requiredKeys.length > 0 && !requiredKeys.every((key) => key in (data as object))) return false;
+        if (option?.guard && !option.guard(data)) return false;
+        return true;
+      };
+
+      for (const name of steps) {
+        // guard + parse 동시 등록 가능
+        result[name] = {
+          guard: currentGuard,
+          ...(option?.parse ? { parse: option.parse } : {}),
+        };
       }
+      prevGuard = currentGuard;
       return builder;
     },
     build() {
-      return stepDefs;
+      return result;
     },
   };
 
@@ -128,11 +145,11 @@ import { parseStepContext } from '../20-runtime-validation';
 
 const steps = createFunnelSteps<{ name?: string; age?: number }>()
   .extends('NameStep')
-  .extends('AgeStep', { requiredKeys: ['name'] })
+  .extends('AgeStep', { requiredKeys: 'name' }) // 문자열 하나도 OK
   .build();
 
 // AgeStep 진입 시 name이 없으면 초기 상태로 폴백
-parseStepContext('AgeStep', {}, steps, initial);             // → initial
+parseStepContext('AgeStep', {}, steps, initial);                // → initial
 parseStepContext('AgeStep', { name: 'Alice' }, steps, initial); // → { step: 'AgeStep', ... }
 ```
 
@@ -143,7 +160,7 @@ parseStepContext('AgeStep', { name: 'Alice' }, steps, initial); // → { step: '
 
 ```ts
 export function createFunnelSteps<TContext extends Record<string, unknown>>(): Builder<TContext> {
-  const stepDefs: Record<string, StepOption> = {};
+  const result: Record<string, StepOption> = {};
   let prevGuard: ((data: unknown) => boolean) | null = null;
 
   const baseGuard = (data: unknown): boolean =>
@@ -152,35 +169,34 @@ export function createFunnelSteps<TContext extends Record<string, unknown>>(): B
   const builder: Builder<TContext> = {
     extends(stepName, option?) {
       const steps = Array.isArray(stepName) ? stepName : [stepName];
+      const capturedPrev = prevGuard;
 
-      if (option?.parse) {
-        for (const name of steps) {
-          stepDefs[name] = { parse: option.parse };
-        }
-        // parse 스텝은 prevGuard 체인에 참여하지 않음
-      } else {
-        const capturedPrev = prevGuard;
-        const requiredKeys = option?.requiredKeys ?? [];
+      const requiredKeys: (keyof TContext)[] = option?.requiredKeys
+        ? Array.isArray(option.requiredKeys)
+          ? option.requiredKeys
+          : [option.requiredKeys]
+        : [];
 
-        const currentGuard: (data: unknown) => boolean =
-          requiredKeys.length > 0
-            ? (data) => {
-                if (!baseGuard(data)) return false;
-                if (capturedPrev && !capturedPrev(data)) return false;
-                return requiredKeys.every((key) => key in (data as object));
-              }
-            : capturedPrev ?? baseGuard;
+      const currentGuard: (data: unknown) => boolean = (data) => {
+        if (!baseGuard(data)) return false;
+        if (capturedPrev && !capturedPrev(data)) return false;
+        if (requiredKeys.length > 0 && !requiredKeys.every((key) => key in (data as object))) return false;
+        if (option?.guard && !option.guard(data)) return false;
+        return true;
+      };
 
-        for (const name of steps) {
-          stepDefs[name] = { guard: currentGuard };
-        }
-        prevGuard = currentGuard;
+      for (const name of steps) {
+        result[name] = {
+          guard: currentGuard,
+          ...(option?.parse ? { parse: option.parse } : {}),
+        };
       }
+      prevGuard = currentGuard;
 
       return builder;
     },
     build() {
-      return stepDefs;
+      return result;
     },
   };
 
@@ -188,9 +204,10 @@ export function createFunnelSteps<TContext extends Record<string, unknown>>(): B
 }
 ```
 
-핵심은 두 가지다:
+핵심은 세 가지다:
 1. **guard 체인**: `capturedPrev`를 클로저로 캡처해서 이전 guard를 포함한 새 guard를 만든다
-2. **parse 분리**: `parse` 옵션은 guard 체인에 참여하지 않고 독립적으로 저장된다
+2. **guard + parse 동시 등록**: 실제 `@use-funnel`처럼 둘 다 있으면 함께 저장한다
+3. **requiredKeys 정규화**: 문자열 하나를 넘겨도 배열로 통일해서 처리한다
 
 `StepOption`을 export하기 때문에 20단계의 `parseStepContext`가 이 타입을 그대로 import해서 사용한다.
 

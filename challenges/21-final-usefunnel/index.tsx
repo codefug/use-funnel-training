@@ -24,7 +24,7 @@ import { useMemoryRouter } from '../11-router-interface/index';
 import type { FunnelRouterResult } from '../11-router-interface/index';
 
 // 17단계: 디스크립터 타입 (overlay, with 모드에서 사용)
-import type { OverlayDescriptor, WithDescriptor, StepDef, StepProps } from '../17-render-props/index';
+import type { OverlayDescriptor, OverlayConfig, WithDescriptor, StepDef, StepProps } from '../17-render-props/index';
 
 // 20단계: Guard/Parse 런타임 검증 + 15단계의 StepOption re-export
 import { parseStepContext } from '../20-runtime-validation/index';
@@ -48,7 +48,7 @@ type FunnelHistoryAPI = {
 };
 
 type RenderComponent = React.FC<RenderProps> & {
-  overlay: (renderFn: OverlayDescriptor['render']) => OverlayDescriptor;
+  overlay: (renderFnOrConfig: OverlayDescriptor['render'] | OverlayConfig) => OverlayDescriptor;
   with: (config: Omit<WithDescriptor, 'type'>) => WithDescriptor;
 };
 

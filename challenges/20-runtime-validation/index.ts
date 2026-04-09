@@ -21,8 +21,9 @@ export type { StepOption };
  * 스텝 전환 시 context를 검증하고 유효한 FunnelState를 반환합니다.
  *
  * - stepOptions[step]이 없으면 그대로 반환
- * - guard가 있으면: guard(context) === true → 통과, false → initialState 반환
+ * - guard가 있으면: guard(context) === true → 계속, false → initialState 반환
  * - parse가 있으면: parse 성공 → 파싱된 context 사용, 에러 → initialState 반환
+ * - guard + parse 둘 다 있으면: guard 먼저 → 통과 시 parse 실행 (실제 @use-funnel과 동일)
  *
  * @param step - 이동할 스텝 이름
  * @param context - 검증할 context
@@ -36,5 +37,14 @@ export function parseStepContext(
   initialState: FunnelState,
 ): FunnelState {
   // TODO: 구현하세요
+  //
+  // 1. stepOptions[step]이 없으면 { step, context }를 그대로 반환
+  // 2. guard가 있으면 guard(context) 실행:
+  //    - false → initialState 반환
+  //    - true → 계속 진행 (parse가 있으면 실행)
+  // 3. parse가 있으면 try/catch로 실행:
+  //    - 성공 → { step, parsedContext } 반환
+  //    - throw → initialState 반환
+  // 4. 아무 옵션도 없으면 { step, context } 그대로 반환
   throw new Error('구현하세요');
 }

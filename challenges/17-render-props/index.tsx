@@ -29,12 +29,30 @@ export type StepProps = {
 export type StepRenderFn = (props: StepProps) => ReactNode;
 
 /**
+ * overlay render 함수가 받는 props.
+ * StepProps(step/context/index/history) + close 함수.
+ * 실제 @use-funnel과 동일하게 overlay 안에서도 context/history에 접근할 수 있다.
+ */
+export type OverlayRenderProps = StepProps & { close: () => void };
+
+/**
  * overlay 스텝을 나타내는 디스크립터.
- * close 함수를 받아 모달/바텀시트를 렌더한다.
+ * render 함수는 step/context/history/close를 모두 받는다.
+ * events를 추가하면 with 모드와 동일하게 dispatch 패턴도 사용할 수 있다.
  */
 export type OverlayDescriptor = {
   type: 'overlay';
-  render: (props: { close: () => void }) => ReactNode;
+  events?: Record<string, (payload: unknown, stepProps: StepProps) => void>;
+  render: (props: OverlayRenderProps) => ReactNode;
+};
+
+/**
+ * overlay() 팩토리에 넘길 수 있는 config 객체 형태.
+ * 실제 @use-funnel: Render.overlay({ render, events? })
+ */
+export type OverlayConfig = {
+  render: (props: OverlayRenderProps) => ReactNode;
+  events?: Record<string, (payload: unknown, stepProps: StepProps) => void>;
 };
 
 /**
@@ -61,7 +79,12 @@ export type FunnelRenderProps = {
 };
 
 export type RenderComponent = React.FC<Record<string, StepDef>> & {
-  overlay: (renderFn: OverlayDescriptor['render']) => OverlayDescriptor;
+  /**
+   * overlay 팩토리. 두 가지 형태를 모두 지원한다:
+   * - 단축형: overlay(renderFn) — 함수를 직접 넘김
+   * - 객체형: overlay({ render, events? }) — 실제 @use-funnel과 동일한 형태
+   */
+  overlay: (renderFnOrConfig: OverlayDescriptor['render'] | OverlayConfig) => OverlayDescriptor;
   with: (config: Omit<WithDescriptor, 'type'>) => WithDescriptor;
 };
 
@@ -107,8 +130,10 @@ export const FunnelRenderWithStatics: RenderComponent = Object.assign(
   FunnelRender as unknown as React.FC<Record<string, StepDef>>,
   {
     // TODO: overlay 팩토리 메서드를 구현하세요.
-    // renderFn을 받아 { type: 'overlay', render: renderFn } 을 반환합니다.
-    overlay: (_renderFn: OverlayDescriptor['render']): OverlayDescriptor => {
+    // 두 가지 형태를 지원합니다:
+    // - 단축형: overlay(renderFn) → { type: 'overlay', render: renderFn }
+    // - 객체형: overlay({ render, events? }) → { type: 'overlay', render, events }
+    overlay: (_renderFnOrConfig: OverlayDescriptor['render'] | OverlayConfig): OverlayDescriptor => {
       throw new Error('구현하세요');
     },
     // TODO: with 팩토리 메서드를 구현하세요.

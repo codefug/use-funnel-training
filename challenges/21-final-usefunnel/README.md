@@ -108,6 +108,7 @@ export function useFunnel(options: UseFunnelOptions): UseFunnelReturn {
     const current = routerRef.current;
     const latestState = current.history[current.currentIndex] ?? options.initial;
     const newContext = computeNextContext(latestState.context, contextOrFn ?? {});
+    // guard → parse 순차 실행 (20단계 parseStepContext, 실제 @use-funnel과 동일)
     return options.steps
       ? parseStepContext(step, newContext, options.steps, options.initial)
       : { step, context: newContext as Record<string, unknown> };
@@ -165,7 +166,8 @@ export function useFunnel(options: UseFunnelOptions): UseFunnelReturn {
         return (
           <Fragment>
             {backgroundNode}
-            {stepDef.render({ close: () => router.go(-1) })}
+            {/* overlay render에 stepProps + close 전달 — 실제 @use-funnel과 동일 */}
+            {stepDef.render({ ...stepProps, close: () => history.back() })}
           </Fragment>
         );
       }

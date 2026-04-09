@@ -39,19 +39,20 @@ Part 2: 커스텀 훅 설계 기초 (06~10)
   09. 함수형 업데이트와 스프레드 머지
   10. useHistory + transition 조합
 
-Part 3: 설계 패턴 적용 (11~15)
+Part 3: 설계 패턴 적용 (11~16)
   11. 인터페이스 설계: Router 계약 정의
-  12. Factory 패턴: createUseFunnel
-  13. 제네릭으로 라우터별 옵션 확장하기
-  14. Builder 패턴: createFunnelSteps
-  15. Object.assign 컴포넌트 합성
+  12. URL SearchParams 라우터 구현
+  13. Factory 패턴: createUseFunnel
+  14. 제네릭으로 라우터별 옵션 확장하기
+  15. Builder 패턴: createFunnelSteps
+  16. 타입 안전한 스텝 전환
 
-Part 4: 렌더링 시스템과 최종 조립 (16~20)
-  16. Render Props: 함수형 렌더
-  17. Render 확장: overlay 모드
-  18. Render 확장: with 모드 (이벤트 디스패치)
-  19. Guard/Parse 런타임 검증
-  20. Final: Mini useFunnel 조립
+Part 4: 렌더링 시스템과 최종 조립 (17~21)
+  17. Render Props + Object.assign 컴포넌트 합성
+  18. Render 확장: overlay 모드
+  19. Render 확장: with 모드 (이벤트 디스패치)
+  20. Guard/Parse 런타임 검증
+  21. Final: Mini useFunnel 조립
 ```
 
 ## 규칙

@@ -60,15 +60,22 @@ return descriptor.render({ dispatch });
 ## use-funnel 연결
 
 ```ts
-// use-funnel의 FunnelRender.tsx
+// 실제 @use-funnel의 FunnelRender.tsx
 } else if (render.type === 'render') {
   const dispatch = (event, ...args) => {
     const handler = render.events[event];
-    handler?.(...args, funnelRenderStep);
+    handler?.(...args, funnelRenderStep); // 없는 이벤트는 silent no-op
   };
   return render.render({ ...funnelRenderStep, dispatch });
 }
 ```
+
+> **실제 라이브러리와의 차이**: 실제 `@use-funnel`은 없는 이벤트를 `handler?.()` — silent no-op으로 처리한다.
+> 본 과제는 학습 목적으로 **에러를 throw**해 실수를 컴파일 전에 발견할 수 있도록 한다.
+
+> **overlay와의 공통점**: 실제 `@use-funnel`에서 `Render.overlay({ events, render })`는
+> `with` 모드와 거의 동일한 이벤트 구조를 공유한다 — overlay 안에서도 `dispatch`로 전환 로직을
+> 분리할 수 있다. (17/18단계의 `OverlayDescriptor`에서 `events` 필드가 있는 이유)
 
 ## 정답
 

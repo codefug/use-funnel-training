@@ -36,5 +36,4 @@ export type PushArgs<
   TStepMap extends Record<string, Record<string, unknown>>,
   TFrom extends keyof TStepMap,
   TTo extends keyof TStepMap,
-// TODO: CompareMergeContext를 사용해서 구현하세요
 > = CompareMergeContext<TStepMap[TFrom], TStepMap[TTo]>;

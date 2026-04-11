@@ -7,8 +7,8 @@
  * solution.test.tsx의 모든 테스트를 통과해야 합니다.
  */
 
+import { computeNextContext } from '@challenges/09-functional-update';
 import type { ReactNode } from 'react';
-import { computeNextContext } from '../09-functional-update/index';
 
 type ContextOrFn =
   | Partial<Record<string, unknown>>
@@ -62,7 +62,9 @@ export type OverlayConfig = {
 export type WithDescriptor = {
   type: 'render';
   events: Record<string, (payload: unknown, stepProps: StepProps) => void>;
-  render: (props: { dispatch: (eventName: string, payload?: unknown) => void } & StepProps) => ReactNode;
+  render: (
+    props: { dispatch: (eventName: string, payload?: unknown) => void } & StepProps,
+  ) => ReactNode;
 };
 
 export type StepDef = StepRenderFn | OverlayDescriptor | WithDescriptor;
@@ -95,19 +97,33 @@ export type RenderComponent = React.FC<Record<string, StepDef>> & {
 export function FunnelRender({
   currentStep,
   context,
-  historySteps,
+  historySteps: _historySteps,
   currentIndex,
   onPush,
   onReplace,
   onGo,
   steps,
 }: FunnelRenderProps): ReactNode {
-  // TODO: 구현하세요
+  const renderFn = steps[currentStep];
+  if (!renderFn) return null;
   // 1. steps[currentStep]으로 현재 스텝의 렌더 함수를 가져오세요.
+
+  const history: StepProps['history'] = {
+    push: (step, contextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onPush(step, newContext);
+    },
+    replace: (step, contextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onReplace(step, newContext);
+    },
+    go: (delta) => onGo(delta),
+    back: () => onGo(-1),
+  };
   // 2. 렌더 함수에 step, context, index, history를 전달하세요.
   // 3. history.push는 computeNextContext로 context를 계산한 뒤 onPush를 호출하세요.
   // 4. 현재 스텝이 없으면 null을 반환하세요.
-  return null;
+  return renderFn({ context, history, index: currentIndex, step: currentStep });
 }
 
 /**
@@ -133,13 +149,18 @@ export const FunnelRenderWithStatics: RenderComponent = Object.assign(
     // 두 가지 형태를 지원합니다:
     // - 단축형: overlay(renderFn) → { type: 'overlay', render: renderFn }
     // - 객체형: overlay({ render, events? }) → { type: 'overlay', render, events }
-    overlay: (_renderFnOrConfig: OverlayDescriptor['render'] | OverlayConfig): OverlayDescriptor => {
-      throw new Error('구현하세요');
+    overlay: (
+      _renderFnOrConfig: OverlayDescriptor['render'] | OverlayConfig,
+    ): OverlayDescriptor => {
+      if (typeof _renderFnOrConfig === 'function') {
+        return { type: 'overlay', render: _renderFnOrConfig };
+      }
+      return { type: 'overlay', ..._renderFnOrConfig };
     },
     // TODO: with 팩토리 메서드를 구현하세요.
     // config를 받아 { type: 'render', ...config } 를 반환합니다.
     with: (_config: Omit<WithDescriptor, 'type'>): WithDescriptor => {
-      throw new Error('구현하세요');
+      return { type: 'render', ..._config };
     },
   },
 );

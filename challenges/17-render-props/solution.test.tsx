@@ -34,7 +34,7 @@ describe('17. Render Props + Object.assign', () => {
       const { container } = render(
         <FunnelRender
           {...baseProps}
-          currentStep="CStep"
+          currentStep='CStep'
           steps={{
             AStep: () => <div>A</div>,
           }}
@@ -104,7 +104,7 @@ describe('17. Render Props + Object.assign', () => {
           onPush={onPush}
           steps={{
             AStep: ({ history }) => (
-              <button onClick={() => history.push('BStep', { age: 20 })}>
+              <button type='button' onClick={() => history.push('BStep', { age: 20 })}>
                 다음
               </button>
             ),
@@ -127,7 +127,9 @@ describe('17. Render Props + Object.assign', () => {
           onGo={onGo}
           steps={{
             AStep: ({ history }) => (
-              <button onClick={() => history.back()}>뒤로</button>
+              <button type='button' onClick={() => history.back()}>
+                뒤로
+              </button>
             ),
           }}
         />,
@@ -148,7 +150,9 @@ describe('17. Render Props + Object.assign', () => {
           onGo={onGo}
           steps={{
             AStep: ({ history }) => (
-              <button onClick={() => history.go(-2)}>두 단계 뒤로</button>
+              <button type='button' onClick={() => history.go(-2)}>
+                두 단계 뒤로
+              </button>
             ),
           }}
         />,

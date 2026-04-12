@@ -7,9 +7,8 @@
  * solution.test.tsx의 모든 테스트를 통과해야 합니다.
  */
 
-import { Fragment } from 'react';
-import type { ReactNode } from 'react';
-import { computeNextContext } from '../09-functional-update/index';
+import { computeNextContext } from "@challenges/09-functional-update";
+import { Fragment, type ReactNode } from "react";
 
 type ContextOrFn =
   | Partial<Record<string, unknown>>
@@ -35,7 +34,7 @@ export type StepProps = {
 export type OverlayRenderProps = StepProps & { close: () => void };
 
 export type OverlayDescriptor = {
-  type: 'overlay';
+  type: "overlay";
   events?: Record<string, (payload: unknown, stepProps: StepProps) => void>;
   render: (props: OverlayRenderProps) => ReactNode;
 };
@@ -73,6 +72,76 @@ export function FunnelRenderWithOverlay({
   onGo,
   steps,
 }: FunnelRenderWithOverlayProps): ReactNode {
-  // TODO: 구현하세요
+  const currentStepDef = steps[currentStep];
+  if (!currentStepDef) return null;
+
+  const history = {
+    push: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onPush(step, newContext as Record<string, unknown>);
+    },
+    replace: (step: string, contextOrFn?: ContextOrFn) => {
+      const newContext = computeNextContext(context, contextOrFn ?? {});
+      onReplace(step, newContext as Record<string, unknown>);
+    },
+    go: (delta: number) => onGo(delta),
+    back: () => onGo(-1),
+  };
+
+  const disabledHistory = {
+    push: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+    replace: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+    go: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+    back: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+  };
+
+  if (typeof currentStepDef === "function") {
+    return currentStepDef({
+      step: currentStep,
+      context,
+      index: currentIndex,
+      history,
+    });
+  }
+
+  if (currentStepDef.type === "overlay") {
+    const beforeSteps = historySteps.slice(0, currentIndex);
+    let backgroundNode: ReactNode = null;
+
+    for (const prevStep of [...beforeSteps].reverse()) {
+      const prevDef = steps[prevStep.step];
+      if (typeof prevDef === "function") {
+        backgroundNode = prevDef({
+          step: prevStep.step,
+          context: prevStep.context,
+          index: currentIndex,
+          history: disabledHistory,
+        });
+        break;
+      }
+    }
+
+    return (
+      <Fragment>
+        {backgroundNode}
+        {currentStepDef.render({
+          step: currentStep,
+          context,
+          index: currentIndex,
+          history,
+          close: () => onGo(-1),
+        })}
+      </Fragment>
+    );
+  }
+
   return null;
 }

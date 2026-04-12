@@ -34,7 +34,7 @@
 type OverlayRenderProps = StepProps & { close: () => void };
 
 type OverlayDescriptor = {
-  type: 'overlay';
+  type: "overlay";
   events?: Record<string, (payload: unknown, stepProps: StepProps) => void>;
   render: (props: OverlayRenderProps) => ReactNode;
 };
@@ -63,10 +63,18 @@ BStep: {
 
 ```ts
 const disabledHistory = {
-  push: () => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
-  replace: () => { throw new Error('...'); },
-  go: () => { throw new Error('...'); },
-  back: () => { throw new Error('...'); },
+  push: () => {
+    throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+  },
+  replace: () => {
+    throw new Error("...");
+  },
+  go: () => {
+    throw new Error("...");
+  },
+  back: () => {
+    throw new Error("...");
+  },
 };
 ```
 
@@ -118,8 +126,14 @@ if (currentStepDef?.type === 'overlay') {
 
 ```tsx
 export function FunnelRenderWithOverlay({
-  currentStep, context, historySteps, currentIndex,
-  onPush, onReplace, onGo, steps,
+  currentStep,
+  context,
+  historySteps,
+  currentIndex,
+  onPush,
+  onReplace,
+  onGo,
+  steps,
 }: FunnelRenderWithOverlayProps): ReactNode {
   const currentStepDef = steps[currentStep];
   if (!currentStepDef) return null;
@@ -138,28 +152,43 @@ export function FunnelRenderWithOverlay({
   };
 
   const disabledHistory = {
-    push: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
-    replace: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
-    go: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
-    back: (): never => { throw new Error('overlay 배경에서는 history를 사용할 수 없습니다'); },
+    push: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+    replace: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+    go: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
+    back: (): never => {
+      throw new Error("overlay 배경에서는 history를 사용할 수 없습니다");
+    },
   };
 
   // 일반 스텝
-  if (typeof currentStepDef === 'function') {
-    return currentStepDef({ step: currentStep, context, index: currentIndex, history });
+  if (typeof currentStepDef === "function") {
+    return currentStepDef({
+      step: currentStep,
+      context,
+      index: currentIndex,
+      history,
+    });
   }
 
   // overlay 스텝
-  if (currentStepDef.type === 'overlay') {
+  if (currentStepDef.type === "overlay") {
     const beforeSteps = historySteps.slice(0, currentIndex);
     let backgroundNode: ReactNode = null;
 
     for (const prevStep of [...beforeSteps].reverse()) {
       const prevDef = steps[prevStep.step];
-      if (typeof prevDef === 'function') {
+      if (typeof prevDef === "function") {
         backgroundNode = prevDef({
-          step: prevStep.step, context: prevStep.context,
-          index: currentIndex, history: disabledHistory,
+          step: prevStep.step,
+          context: prevStep.context,
+          index: currentIndex,
+          history: disabledHistory,
         });
         break;
       }
@@ -169,7 +198,11 @@ export function FunnelRenderWithOverlay({
       <Fragment>
         {backgroundNode}
         {currentStepDef.render({
-          step: currentStep, context, index: currentIndex, history, close: () => onGo(-1),
+          step: currentStep,
+          context,
+          index: currentIndex,
+          history,
+          close: () => onGo(-1),
         })}
       </Fragment>
     );
@@ -180,6 +213,7 @@ export function FunnelRenderWithOverlay({
 ```
 
 overlay 처리의 핵심은 두 가지다:
+
 1. **히스토리 역순 탐색**: 가장 가까운 비overlay 스텝을 찾아 배경으로 렌더한다
 2. **render에 stepProps + close 전달**: overlay 안에서도 `context`/`history`에 접근할 수 있다
 

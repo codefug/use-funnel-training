@@ -1,17 +1,17 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import { FunnelRenderWithOverlay } from './index';
-import type { OverlayDescriptor } from './index';
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import type { OverlayDescriptor } from "./index";
+import { FunnelRenderWithOverlay } from "./index";
 
-describe('17. Overlay Render', () => {
-  describe('일반 스텝 (함수형)', () => {
-    it('현재 step에 해당하는 함수를 호출한다', () => {
+describe("18. Overlay Render", () => {
+  describe("일반 스텝 (함수형)", () => {
+    it("현재 step에 해당하는 함수를 호출한다", () => {
       render(
         <FunnelRenderWithOverlay
           currentStep="AStep"
           context={{}}
-          historySteps={[{ step: 'AStep', context: {} }]}
+          historySteps={[{ step: "AStep", context: {} }]}
           currentIndex={0}
           onPush={vi.fn()}
           onReplace={vi.fn()}
@@ -22,13 +22,13 @@ describe('17. Overlay Render', () => {
         />,
       );
 
-      expect(screen.getByText('A Step')).toBeTruthy();
+      expect(screen.getByText("A Step")).toBeTruthy();
     });
   });
 
-  describe('overlay 스텝', () => {
+  describe("overlay 스텝", () => {
     const overlayDescriptor: OverlayDescriptor = {
-      type: 'overlay',
+      type: "overlay",
       render: ({ close }) => (
         <div>
           <span>Overlay Content</span>
@@ -37,14 +37,14 @@ describe('17. Overlay Render', () => {
       ),
     };
 
-    it('배경 스텝과 overlay를 동시에 렌더한다', () => {
+    it("배경 스텝과 overlay를 동시에 렌더한다", () => {
       render(
         <FunnelRenderWithOverlay
           currentStep="BStep"
-          context={{ name: 'Alice' }}
+          context={{ name: "Alice" }}
           historySteps={[
-            { step: 'AStep', context: {} },
-            { step: 'BStep', context: { name: 'Alice' } },
+            { step: "AStep", context: {} },
+            { step: "BStep", context: { name: "Alice" } },
           ]}
           currentIndex={1}
           onPush={vi.fn()}
@@ -57,11 +57,11 @@ describe('17. Overlay Render', () => {
         />,
       );
 
-      expect(screen.getByText('Background')).toBeTruthy();
-      expect(screen.getByText('Overlay Content')).toBeTruthy();
+      expect(screen.getByText("Background")).toBeTruthy();
+      expect(screen.getByText("Overlay Content")).toBeTruthy();
     });
 
-    it('overlay의 close를 호출하면 onGo(-1)이 실행된다', async () => {
+    it("overlay의 close를 호출하면 onGo(-1)이 실행된다", async () => {
       const onGo = vi.fn();
       const user = userEvent.setup();
 
@@ -70,8 +70,8 @@ describe('17. Overlay Render', () => {
           currentStep="BStep"
           context={{}}
           historySteps={[
-            { step: 'AStep', context: {} },
-            { step: 'BStep', context: {} },
+            { step: "AStep", context: {} },
+            { step: "BStep", context: {} },
           ]}
           currentIndex={1}
           onPush={vi.fn()}
@@ -84,21 +84,22 @@ describe('17. Overlay Render', () => {
         />,
       );
 
-      await user.click(screen.getByText('닫기'));
+      await user.click(screen.getByText("닫기"));
       expect(onGo).toHaveBeenCalledWith(-1);
     });
 
-    it('배경 스텝의 history 메서드는 비활성화된다', () => {
+    it("배경 스텝의 history 메서드는 비활성화된다", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let capturedHistory: { push: (step?: any, ctx?: any) => void } | null = null;
+      let capturedHistory: { push: (step?: any, ctx?: any) => void } | null =
+        null;
 
       render(
         <FunnelRenderWithOverlay
           currentStep="BStep"
           context={{}}
           historySteps={[
-            { step: 'AStep', context: {} },
-            { step: 'BStep', context: {} },
+            { step: "AStep", context: {} },
+            { step: "BStep", context: {} },
           ]}
           currentIndex={1}
           onPush={vi.fn()}
@@ -118,15 +119,15 @@ describe('17. Overlay Render', () => {
       expect(() => capturedHistory?.push()).toThrow();
     });
 
-    it('가장 가까운 비overlay 스텝을 배경으로 사용한다', () => {
+    it("가장 가까운 비overlay 스텝을 배경으로 사용한다", () => {
       render(
         <FunnelRenderWithOverlay
           currentStep="CStep"
           context={{}}
           historySteps={[
-            { step: 'AStep', context: {} },
-            { step: 'BStep', context: {} },
-            { step: 'CStep', context: {} },
+            { step: "AStep", context: {} },
+            { step: "BStep", context: {} },
+            { step: "CStep", context: {} },
           ]}
           currentIndex={2}
           onPush={vi.fn()}
@@ -136,7 +137,7 @@ describe('17. Overlay Render', () => {
             AStep: () => <div>A Background</div>,
             BStep: () => <div>B Background</div>, // 가장 가까운 비overlay
             CStep: {
-              type: 'overlay',
+              type: "overlay",
               render: () => <div>C Overlay</div>,
             },
           }}
@@ -144,9 +145,9 @@ describe('17. Overlay Render', () => {
       );
 
       // B가 배경 (A는 렌더되지 않음)
-      expect(screen.queryByText('A Background')).toBeNull();
-      expect(screen.getByText('B Background')).toBeTruthy();
-      expect(screen.getByText('C Overlay')).toBeTruthy();
+      expect(screen.queryByText("A Background")).toBeNull();
+      expect(screen.getByText("B Background")).toBeTruthy();
+      expect(screen.getByText("C Overlay")).toBeTruthy();
     });
   });
 });
